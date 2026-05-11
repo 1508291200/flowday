@@ -47,6 +47,15 @@ export const useSyncStore = create<SyncState & SyncActions>()(
         const { config } = get();
         if (!config) return;
         
+        // 验证路径格式
+        if (config.path && !config.path.startsWith('/')) {
+          set({ 
+            status: 'error', 
+            error: '路径必须以 / 开头' 
+          });
+          return;
+        }
+        
         set({ status: 'syncing', error: null });
         
         try {
@@ -59,9 +68,20 @@ export const useSyncStore = create<SyncState & SyncActions>()(
             lastSyncTime: new Date().toISOString() 
           });
         } catch (error) {
+          let errorMessage = error instanceof Error ? error.message : '同步失败';
+          
+          // 提供更友好的错误提示
+          if (errorMessage.includes('410') || errorMessage.includes('Gone')) {
+            errorMessage = '目录不存在或已被删除。请检查路径设置，建议使用 /FlowDay';
+          } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+            errorMessage = '认证失败，请检查用户名和应用密码';
+          } else if (errorMessage.includes('403') || errorMessage.includes('Forbidden')) {
+            errorMessage = '没有权限访问该目录';
+          }
+          
           set({ 
             status: 'error', 
-            error: error instanceof Error ? error.message : '同步失败' 
+            error: errorMessage 
           });
         }
       },

@@ -96,6 +96,9 @@ export function SettingsView() {
             onChange={(e) => setFormData(prev => ({ ...prev, path: e.target.value }))}
             placeholder="/FlowDay"
           />
+          <p className="text-xs text-gray-500">
+            路径以 / 开头，如 /FlowDay。注意：不要输入"/我的坚果云"，WebDAV根目录 / 就是您的同步根目录。
+          </p>
           
           {/* 测试结果 */}
           {testResult && (

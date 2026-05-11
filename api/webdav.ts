@@ -79,7 +79,19 @@ export default async function handler(request: Request): Promise<Response> {
   }
   
   const auth = 'Basic ' + btoa(`${username}:${password}`);
-  const url = `${WEBDAV_BASE}${path}`;
+  
+  // URL 编码路径中的非 ASCII 字符
+  // 将路径拆分为多个部分，分别编码后再拼接
+  const encodedPath = path.split('/').map(part => {
+    if (!part) return '';
+    // 对非 ASCII 字符进行编码，但保留已编码的字符串
+    if (/[\u4e00-\u9fa5]/.test(part) && !part.includes('%')) {
+      return encodeURIComponent(part);
+    }
+    return part;
+  }).join('/');
+  
+  const url = `${WEBDAV_BASE}${encodedPath}`;
   
   try {
     let result: Response;
