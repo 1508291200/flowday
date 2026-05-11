@@ -15,7 +15,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-const WEBDAV_BASE = 'https://dav.jianguoyun.com';
+const WEBDAV_BASE = 'https://dav.jianguoyun.com/dav';
 
 type Action = 'test' | 'stat' | 'get' | 'put' | 'mkdir';
 
@@ -80,9 +80,20 @@ export default async function handler(request: Request): Promise<Response> {
   
   const auth = 'Basic ' + btoa(`${username}:${password}`);
   
+  // 智能路径修正：
+  // 坚果云 WebDAV 根目录 / 就是用户的"我的坚果云"文件夹
+  // 不应该使用 /我的坚果云 或 /我的坚果云/xxx
+  let normalizedPath = path || '/';
+  
+  // 检测并移除错误的前缀路径
+  if (normalizedPath.startsWith('/我的坚果云')) {
+    // 移除 /我的坚果云 前缀，保留后面的路径
+    normalizedPath = normalizedPath.replace(/^\/我的坚果云/, '') || '/';
+  }
+  
   // URL 编码路径中的非 ASCII 字符
   // 将路径拆分为多个部分，分别编码后再拼接
-  const encodedPath = path.split('/').map(part => {
+  const encodedPath = normalizedPath.split('/').map(part => {
     if (!part) return '';
     // 对非 ASCII 字符进行编码，但保留已编码的字符串
     if (/[\u4e00-\u9fa5]/.test(part) && !part.includes('%')) {
@@ -113,8 +124,15 @@ export default async function handler(request: Request): Promise<Response> {
         return json({ success: false, error: `HTTP ${result.status}` });
       
       case 'stat': {
-        const filePath = path.endsWith('/') ? `${path}flowday.json` : path;
-        result = await fetch(`${WEBDAV_BASE}${filePath}`, {
+        const statFilePath = normalizedPath.endsWith('/') ? `${normalizedPath}flowday.json` : normalizedPath;
+        const encodedStatPath = statFilePath.split('/').map(part => {
+          if (!part) return '';
+          if (/[一-龥]/.test(part) && !part.includes('%')) {
+            return encodeURIComponent(part);
+          }
+          return part;
+        }).join('/');
+        result = await fetch(`${WEBDAV_BASE}${encodedStatPath}`, {
           method: 'PROPFIND',
           headers: {
             'Authorization': auth,
@@ -135,8 +153,15 @@ export default async function handler(request: Request): Promise<Response> {
       }
       
       case 'get': {
-        const filePath = path.endsWith('/') ? `${path}flowday.json` : path;
-        result = await fetch(`${WEBDAV_BASE}${filePath}`, {
+        const getFilePath = normalizedPath.endsWith('/') ? `${normalizedPath}flowday.json` : normalizedPath;
+        const encodedGetPath = getFilePath.split('/').map(part => {
+          if (!part) return '';
+          if (/[一-龥]/.test(part) && !part.includes('%')) {
+            return encodeURIComponent(part);
+          }
+          return part;
+        }).join('/');
+        result = await fetch(`${WEBDAV_BASE}${encodedGetPath}`, {
           method: 'GET',
           headers: { 'Authorization': auth },
         });
@@ -154,12 +179,19 @@ export default async function handler(request: Request): Promise<Response> {
       }
       
       case 'put': {
-        const filePath = path.endsWith('/') ? `${path}flowday.json` : path;
+        const putFilePath = normalizedPath.endsWith('/') ? `${normalizedPath}flowday.json` : normalizedPath;
+        const encodedPutPath = putFilePath.split('/').map(part => {
+          if (!part) return '';
+          if (/[一-龥]/.test(part) && !part.includes('%')) {
+            return encodeURIComponent(part);
+          }
+          return part;
+        }).join('/');
         if (!data) {
           return json({ success: false, error: 'Missing data' }, 400);
         }
         
-        result = await fetch(`${WEBDAV_BASE}${filePath}`, {
+        result = await fetch(`${WEBDAV_BASE}${encodedPutPath}`, {
           method: 'PUT',
           headers: {
             'Authorization': auth,
