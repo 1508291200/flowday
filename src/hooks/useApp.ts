@@ -53,7 +53,7 @@ export function useApp() {
   
   // 视图切换
   const setCurrentView = useCallback(
-    (view: 'mindmap' | 'list' | 'filter') => {
+    (view: 'mindmap' | 'list' | 'filter' | 'settings') => {
       useAppStore.getState().setCurrentView(view);
     },
     []

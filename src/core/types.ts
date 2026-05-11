@@ -320,7 +320,7 @@ export interface EventRecord {
 // ============================================================================
 
 /** 视图类型枚举 */
-export type ViewType = 'mindmap' | 'list' | 'filter';
+export type ViewType = 'mindmap' | 'list' | 'filter' | 'settings';
 
 /** 思维导图节点 */
 export interface MindMapNode {
