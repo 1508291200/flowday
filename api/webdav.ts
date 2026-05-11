@@ -234,8 +234,8 @@ export default async function handler(request: Request): Promise<Response> {
           headers: { 'Authorization': auth },
         });
         
-        // 405 means already exists
-        if (result.ok || result.status === 201 || result.status === 405) {
+        // 405 or 409 means already exists
+        if (result.ok || result.status === 201 || result.status === 405 || result.status === 409) {
           return json({ success: true });
         }
         return json({ success: false, error: `HTTP ${result.status}` });
