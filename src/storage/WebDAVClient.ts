@@ -97,10 +97,21 @@ export class WebDAVStorage {
    * 获取文件路径
    */
   private getFilePath(): string {
-    const basePath = this.config.path || '/';
-    return basePath.endsWith('/') 
-      ? `${basePath}${this.filename}`
-      : `${basePath}/${this.filename}`;
+    let basePath = this.config.path || '/';
+    
+    // 如果路径以 / 结尾，说明是目录，追加文件名
+    if (basePath.endsWith('/')) {
+      return `${basePath}${this.filename}`;
+    }
+    
+    // 如果路径包含扩展名（如 .json），说明已经是完整文件路径，直接使用
+    const lastPart = basePath.split('/').pop() || '';
+    if (lastPart.includes('.') && !lastPart.startsWith('.')) {
+      return basePath;
+    }
+    
+    // 否则认为是目录路径，追加文件名
+    return `${basePath}/${this.filename}`;
   }
   
   /**
@@ -173,20 +184,47 @@ export class WebDAVStorage {
    * 确保目录存在
    */
   async ensureDirectory(): Promise<void> {
-    if (this.config.path && this.config.path !== '/') {
+    // 提取目录路径：如果 path 包含文件名（有扩展名），则取其父目录
+    let dirPath = this.config.path || '/';
+    if (dirPath !== '/' && !dirPath.endsWith('/')) {
+      // 如果路径包含点号（可能是文件扩展名），取父目录
+      const lastSlash = dirPath.lastIndexOf('/');
+      const lastPart = dirPath.substring(lastSlash + 1);
+      if (lastPart.includes('.') && !lastPart.startsWith('.')) {
+        // 看起来像文件名，提取目录部分
+        dirPath = dirPath.substring(0, lastSlash) || '/';
+      }
+    }
+    
+    if (dirPath && dirPath !== '/') {
       if (this.isDev) {
         const auth = 'Basic ' + btoa(`${this.config.username}:${this.config.password}`);
-        const response = await fetch(`${this.config.url}${this.config.path}`, {
+        const response = await fetch(`${this.config.url}${dirPath}`, {
           method: 'MKCOL',
           headers: { 'Authorization': auth },
         });
         
         // 405 means already exists
         if (!response.ok && response.status !== 405) {
-          throw new Error(`Failed to create directory: ${response.status}`);
+          throw new Error(`创建目录失败: ${dirPath}`);
         }
       } else {
-        await this.callApi('mkdir');
+        // 传递提取后的目录路径
+        const response = await fetch('/api/webdav', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'mkdir',
+            username: this.config.username,
+            password: this.config.password,
+            path: dirPath,
+          }),
+        });
+        
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(`创建目录失败: ${dirPath}`);
+        }
       }
     }
   }
