@@ -144,9 +144,10 @@ export default async function handler(request: Request): Promise<Response> {
         if (result.status === 207 || result.status === 200) {
           return json({ success: true, exists: true });
         }
-        // 404 或 410 都表示文件不存在
+        // 404, 410, 或 409 都表示文件不存在
         // 坚果云可能返回 410 (Gone) 表示文件已删除
-        if (result.status === 404 || result.status === 410) {
+        // 409 (Conflict) 表示父目录不存在
+        if (result.status === 404 || result.status === 410 || result.status === 409) {
           return json({ success: true, exists: false });
         }
         return json({ success: false, error: `HTTP ${result.status}` });
