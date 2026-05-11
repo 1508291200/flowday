@@ -114,7 +114,9 @@ export default async function handler(request: Request): Promise<Response> {
         if (result.status === 207 || result.status === 200) {
           return json({ success: true, exists: true });
         }
-        if (result.status === 404) {
+        // 404 或 410 都表示文件不存在
+        // 坚果云可能返回 410 (Gone) 表示文件已删除
+        if (result.status === 404 || result.status === 410) {
           return json({ success: true, exists: false });
         }
         return json({ success: false, error: `HTTP ${result.status}` });
@@ -127,7 +129,8 @@ export default async function handler(request: Request): Promise<Response> {
           headers: { 'Authorization': auth },
         });
         
-        if (result.status === 404) {
+        // 404 或 410 都表示文件不存在
+        if (result.status === 404 || result.status === 410) {
           return json({ success: true, data: null });
         }
         if (!result.ok) {
@@ -159,7 +162,29 @@ export default async function handler(request: Request): Promise<Response> {
         return json({ success: false, error: `HTTP ${result.status}` });
       }
       
-      case 'mkdir':
+      case 'mkdir': {
+        // 先检查目录是否存在
+        const checkResult = await fetch(url, {
+          method: 'PROPFIND',
+          headers: {
+            'Authorization': auth,
+            'Depth': '0',
+            'Content-Type': 'application/xml',
+          },
+        });
+        
+        // 目录已存在
+        if (checkResult.status === 207 || checkResult.status === 200) {
+          return json({ success: true, exists: true });
+        }
+        
+        // 404 或 410 表示目录不存在，需要创建
+        // 坚果云可能返回 410 (Gone) 表示目录已删除
+        if (checkResult.status !== 404 && checkResult.status !== 410) {
+          return json({ success: false, error: `检查目录失败: HTTP ${checkResult.status}` });
+        }
+        
+        // 创建目录
         result = await fetch(url, {
           method: 'MKCOL',
           headers: { 'Authorization': auth },
@@ -170,6 +195,7 @@ export default async function handler(request: Request): Promise<Response> {
           return json({ success: true });
         }
         return json({ success: false, error: `HTTP ${result.status}` });
+      }
       
       default:
         return json({ success: false, error: 'Unknown action' }, 400);
