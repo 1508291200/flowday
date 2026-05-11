@@ -2,7 +2,7 @@
  * FilterPanel 筛选条件面板组件
  */
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { clsx } from 'clsx';
 import { Button, Input } from '../common';
 import type { FilterConfig, ImportanceLevel, Tag } from '../../core/types';
@@ -25,6 +25,8 @@ export function FilterPanel({
   onReset,
   className,
 }: FilterPanelProps) {
+  // 折叠状态
+  const [collapsed, setCollapsed] = useState(false);
   // 更新搜索关键字
   const handleKeywordChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,164 +98,183 @@ export function FilterPanel({
   );
 
   return (
-    <div className={clsx('bg-white border-b border-gray-200 p-4', className)}>
-      <div className="space-y-4">
-        {/* 搜索关键字 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            搜索
-          </label>
-          <Input
-            placeholder="输入关键字搜索..."
-            value={config.searchKeyword ?? ''}
-            onChange={handleKeywordChange}
-          />
-        </div>
-
-        {/* 重要度筛选 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            重要度
-          </label>
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map(level => {
-              const inRange =
-                config.importanceRange &&
-                level >= config.importanceRange[0] &&
-                level <= config.importanceRange[1];
-              return (
-                <button
-                  key={level}
-                  onClick={() => handleImportanceChange(level as ImportanceLevel, !inRange)}
-                  className={clsx(
-                    'w-8 h-8 rounded-full text-xs font-medium transition-colors',
-                    inRange
-                      ? 'text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  )}
-                  style={{
-                    backgroundColor: inRange
-                      ? IMPORTANCE_COLORS[level as ImportanceLevel]
-                      : undefined,
-                  }}
-                  title={IMPORTANCE_LABELS[level as ImportanceLevel]}
-                >
-                  {level}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* 完成状态 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            完成状态
-          </label>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleCompletedChange(undefined)}
-              className={clsx(
-                'px-3 py-1 text-sm rounded-md transition-colors',
-                config.completed === undefined
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              )}
-            >
-              全部
-            </button>
-            <button
-              onClick={() => handleCompletedChange(false)}
-              className={clsx(
-                'px-3 py-1 text-sm rounded-md transition-colors',
-                config.completed === false
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              )}
-            >
-              未完成
-            </button>
-            <button
-              onClick={() => handleCompletedChange(true)}
-              className={clsx(
-                'px-3 py-1 text-sm rounded-md transition-colors',
-                config.completed === true
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              )}
-            >
-              已完成
-            </button>
-          </div>
-        </div>
-
-        {/* 标签筛选 */}
-        {tags.length > 0 && (
+    <div className={clsx('bg-white border-b border-gray-200', className)}>
+      {/* 标题栏（可折叠） */}
+      <div
+        className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <span className="text-sm font-medium text-gray-700">筛选条件</span>
+        <svg
+          className={clsx('w-4 h-4 text-gray-500 transition-transform', collapsed ? '' : 'rotate-180')}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+      
+      {/* 筛选内容（可折叠） */}
+      {!collapsed && (
+        <div className="p-4 space-y-4">
+          {/* 搜索关键字 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              标签
+              搜索
             </label>
-            <div className="flex flex-wrap gap-2">
-              {tags.map(tag => {
-                const selected = config.tags?.ids.includes(tag.id);
+            <Input
+              placeholder="输入关键字搜索..."
+              value={config.searchKeyword ?? ''}
+              onChange={handleKeywordChange}
+            />
+          </div>
+
+          {/* 重要度筛选 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              重要度
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map(level => {
+                const inRange =
+                  config.importanceRange &&
+                  level >= config.importanceRange[0] &&
+                  level <= config.importanceRange[1];
                 return (
                   <button
-                    key={tag.id}
-                    onClick={() => handleTagChange(tag.id, !selected)}
+                    key={level}
+                    onClick={() => handleImportanceChange(level as ImportanceLevel, !inRange)}
                     className={clsx(
-                      'px-2 py-1 text-xs rounded transition-colors',
-                      selected
-                        ? 'ring-2 ring-blue-400 ring-offset-1'
-                        : 'opacity-60 hover:opacity-100'
+                      'w-8 h-8 rounded-full text-xs font-medium transition-colors',
+                      inRange
+                        ? 'text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     )}
-                    style={{ backgroundColor: tag.color, color: 'white' }}
+                    style={{
+                      backgroundColor: inRange
+                        ? IMPORTANCE_COLORS[level as ImportanceLevel]
+                        : undefined,
+                    }}
+                    title={IMPORTANCE_LABELS[level as ImportanceLevel]}
                   >
-                    {tag.name}
+                    {level}
                   </button>
                 );
               })}
             </div>
           </div>
-        )}
 
-        {/* 排序设置 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            排序方式
-          </label>
-          <div className="flex gap-2">
-            <select
-              value={config.sortBy}
-              onChange={(e) => handleSortChange(e.target.value as FilterConfig['sortBy'], config.sortOrder)}
-              className="px-2 py-1 text-sm border border-gray-300 rounded-md"
-            >
-              <option value="importance">重要度</option>
-              <option value="dueDate">截止日期</option>
-              <option value="createdAt">创建时间</option>
-              <option value="updatedAt">更新时间</option>
-              <option value="title">标题</option>
-            </select>
-            <select
-              value={config.sortOrder}
-              onChange={(e) => handleSortChange(config.sortBy, e.target.value as FilterConfig['sortOrder'])}
-              className="px-2 py-1 text-sm border border-gray-300 rounded-md"
-            >
-              <option value="asc">升序</option>
-              <option value="desc">降序</option>
-            </select>
+          {/* 完成状态 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              完成状态
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleCompletedChange(undefined)}
+                className={clsx(
+                  'px-3 py-1 text-sm rounded-md transition-colors',
+                  config.completed === undefined
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                )}
+              >
+                全部
+              </button>
+              <button
+                onClick={() => handleCompletedChange(false)}
+                className={clsx(
+                  'px-3 py-1 text-sm rounded-md transition-colors',
+                  config.completed === false
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                )}
+              >
+                未完成
+              </button>
+              <button
+                onClick={() => handleCompletedChange(true)}
+                className={clsx(
+                  'px-3 py-1 text-sm rounded-md transition-colors',
+                  config.completed === true
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                )}
+              >
+                已完成
+              </button>
+            </div>
+          </div>
+
+          {/* 标签筛选 */}
+          {tags.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                标签
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => {
+                  const selected = config.tags?.ids.includes(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      onClick={() => handleTagChange(tag.id, !selected)}
+                      className={clsx(
+                        'px-2 py-1 text-xs rounded transition-colors',
+                        selected
+                          ? 'ring-2 ring-blue-400 ring-offset-1'
+                          : 'opacity-60 hover:opacity-100'
+                      )}
+                      style={{ backgroundColor: tag.color, color: 'white' }}
+                    >
+                      {tag.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 排序设置 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              排序方式
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={config.sortBy}
+                onChange={(e) => handleSortChange(e.target.value as FilterConfig['sortBy'], config.sortOrder)}
+                className="px-2 py-1 text-sm border border-gray-300 rounded-md"
+              >
+                <option value="importance">重要度</option>
+                <option value="dueDate">截止日期</option>
+                <option value="createdAt">创建时间</option>
+                <option value="updatedAt">更新时间</option>
+                <option value="title">标题</option>
+              </select>
+              <select
+                value={config.sortOrder}
+                onChange={(e) => handleSortChange(config.sortBy, e.target.value as FilterConfig['sortOrder'])}
+                className="px-2 py-1 text-sm border border-gray-300 rounded-md"
+              >
+                <option value="asc">升序</option>
+                <option value="desc">降序</option>
+              </select>
+            </div>
+          </div>
+
+          {/* 操作按钮 */}
+          <div className="flex gap-2 pt-2">
+            <Button size="sm" onClick={onApply}>
+              应用筛选
+            </Button>
+            <Button size="sm" variant="secondary" onClick={onReset}>
+              重置
+            </Button>
           </div>
         </div>
-
-        {/* 操作按钮 */}
-        <div className="flex gap-2 pt-2">
-          <Button size="sm" onClick={onApply}>
-            应用筛选
-          </Button>
-          <Button size="sm" variant="secondary" onClick={onReset}>
-            重置
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

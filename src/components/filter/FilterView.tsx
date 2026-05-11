@@ -98,12 +98,12 @@ export function FilterView() {
   // 获取所有标签
   const allTags = useMemo(() => tagManager.getAllTags(), [tagManager]);
 
-  // 虚拟列表配置
+  // 虚拟列表配置（单列布局）
   const rowVirtualizer = useVirtualizer({
-    count: Math.ceil(filteredNodes.length / 3), // 每行3个卡片
+    count: filteredNodes.length,
     getScrollElement: () => containerRef.current,
-    estimateSize: () => 140,
-    overscan: 5,
+    estimateSize: () => 160,
+    overscan: 10,
   });
 
   // 更新配置
@@ -169,8 +169,7 @@ export function FilterView() {
             }}
           >
             {rowVirtualizer.getVirtualItems().map(virtualRow => {
-              const startIndex = virtualRow.index * 3;
-              const rowNodes = filteredNodes.slice(startIndex, startIndex + 3);
+              const node = filteredNodes[virtualRow.index];
               
               return (
                 <div
@@ -183,15 +182,13 @@ export function FilterView() {
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                  className="px-1"
                 >
-                  {rowNodes.map(node => (
-                    <FilterCard
-                      key={node.id}
-                      node={node}
-                      tags={allTags}
-                    />
-                  ))}
+                  <FilterCard
+                    key={node.id}
+                    node={node}
+                    tags={allTags}
+                  />
                 </div>
               );
             })}
