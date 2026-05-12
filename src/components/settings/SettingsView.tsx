@@ -1,19 +1,28 @@
 /**
  * SettingsView 设置视图
  * 
- * 提供 WebDAV 云同步配置
+ * 提供 WebDAV 云同步配置和操作
  */
 
 import { useState, useCallback } from 'react';
 import { useSyncStore } from '../../stores/syncStore';
+import { useSchedulerStore } from '../../stores/schedulerStore';
 import { Button, Input } from '../common';
 
 export function SettingsView() {
   const config = useSyncStore((s) => s.config);
   const status = useSyncStore((s) => s.status);
+  const lastSyncTime = useSyncStore((s) => s.lastSyncTime);
+  const lastSyncDirection = useSyncStore((s) => s.lastSyncDirection);
+  const error = useSyncStore((s) => s.error);
   const setConfig = useSyncStore((s) => s.setConfig);
   const testConnection = useSyncStore((s) => s.testConnection);
-  const syncNow = useSyncStore((s) => s.syncNow);
+  const uploadToCloud = useSyncStore((s) => s.uploadToCloud);
+  const downloadFromCloud = useSyncStore((s) => s.downloadFromCloud);
+  
+  const schedulerManager = useSchedulerStore((s) => s.schedulerManager);
+  const tagManager = useSchedulerStore((s) => s.tagManager);
+  const storage = useSchedulerStore((s) => s.storage);
   
   const [formData, setFormData] = useState({
     url: config?.url || 'https://dav.jianguoyun.com',
@@ -24,6 +33,7 @@ export function SettingsView() {
   
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [syncing, setSyncing] = useState(false);
   
   const handleTest = useCallback(async () => {
     setTesting(true);
@@ -49,9 +59,48 @@ export function SettingsView() {
     setConfig(formData);
   }, [formData, setConfig]);
   
-  const handleSync = useCallback(async () => {
-    await syncNow();
-  }, [syncNow]);
+  const handleUpload = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await uploadToCloud(() => ({
+        nodes: schedulerManager.getAllNodes(),
+        tags: tagManager.getAllTags(),
+      }));
+    } finally {
+      setSyncing(false);
+    }
+  }, [uploadToCloud, schedulerManager, tagManager]);
+  
+  const handleDownload = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await downloadFromCloud(async (data) => {
+        // 先清空本地数据，再导入云端数据
+        if (data.nodes.length > 0) {
+          schedulerManager.importNodes(data.nodes);
+        }
+        if (data.tags.length > 0) {
+          tagManager.importTags(data.tags);
+        }
+        // 保存到 IndexedDB
+        await storage.saveNodes(schedulerManager.getAllNodes());
+        await storage.saveTags(tagManager.getAllTags());
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }, [downloadFromCloud, schedulerManager, tagManager, storage]);
+  
+  // 格式化最后同步时间
+  const formatLastSyncTime = (time: string | null) => {
+    if (!time) return '未同步';
+    const date = new Date(time);
+    const direction = lastSyncDirection === 'upload' ? '上传' : '下载';
+    return `${direction} · ${date.toLocaleString('zh-CN')}`;
+  };
+  
+  const isConfigured = config !== null;
+  const isSyncing = status === 'syncing' || syncing;
   
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -97,7 +146,7 @@ export function SettingsView() {
             placeholder="/FlowDay"
           />
           <p className="text-xs text-gray-500">
-            路径以 / 开头，如 /FlowDay。注意：不要输入"/我的坚果云"，WebDAV根目录 / 就是您的同步根目录。
+            路径以 / 开头，如 /FlowDay。不要输入"/我的坚果云"，WebDAV根目录 / 就是您的同步根目录。
           </p>
           
           {/* 测试结果 */}
@@ -107,15 +156,26 @@ export function SettingsView() {
             </div>
           )}
           
-          {/* 状态指示 */}
-          {status && (
+          {/* 同步状态 */}
+          {isConfigured && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className={`w-2 h-2 rounded-full ${status === 'syncing' ? 'bg-blue-500 animate-pulse' : status === 'error' ? 'bg-red-500' : 'bg-green-500'}`}></span>
-              {status === 'syncing' ? '同步中...' : status === 'error' ? '同步失败' : '已同步'}
+              <span className={`w-2 h-2 rounded-full ${
+                status === 'syncing' ? 'bg-blue-500 animate-pulse' : 
+                status === 'error' ? 'bg-red-500' : 
+                status === 'success' ? 'bg-green-500' : 'bg-gray-400'
+              }`}></span>
+              {status === 'syncing' ? '同步中...' : formatLastSyncTime(lastSyncTime)}
             </div>
           )}
           
-          {/* 操作按钮 */}
+          {/* 错误信息 */}
+          {error && (
+            <div className="p-3 rounded bg-red-50 text-red-700">
+              {error}
+            </div>
+          )}
+          
+          {/* 配置按钮 */}
           <div className="flex items-center gap-2">
             <Button 
               variant="secondary" 
@@ -127,12 +187,32 @@ export function SettingsView() {
             <Button onClick={handleSave}>
               保存配置
             </Button>
-            {config && (
-              <Button onClick={handleSync}>
-                立即同步
-              </Button>
-            )}
           </div>
+          
+          {/* 同步操作按钮 */}
+          {isConfigured && (
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">同步操作</h3>
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={handleUpload}
+                  disabled={isSyncing}
+                  variant="secondary"
+                >
+                  {isSyncing && lastSyncDirection === 'upload' ? '上传中...' : '上传到云端'}
+                </Button>
+                <Button 
+                  onClick={handleDownload}
+                  disabled={isSyncing}
+                >
+                  {isSyncing && lastSyncDirection === 'download' ? '下载中...' : '从云端恢复'}
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                上传：将本地数据推送到云端（覆盖云端数据）。下载：从云端恢复数据到本地（覆盖本地数据）。
+              </p>
+            </div>
+          )}
         </div>
       </section>
       
@@ -143,7 +223,8 @@ export function SettingsView() {
           <li>推荐使用坚果云 WebDAV 服务（免费）</li>
           <li>坚果云需要在"账户信息 → 安全选项"中创建应用密码</li>
           <li>应用密码不同于登录密码，更安全</li>
-          <li>数据会保存到 WebDAV 服务的指定目录</li>
+          <li>"上传到云端"会将当前本地数据推送到云端</li>
+          <li>"从云端恢复"会用云端数据覆盖本地数据</li>
         </ul>
       </section>
     </div>

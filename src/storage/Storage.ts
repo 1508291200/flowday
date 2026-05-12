@@ -123,12 +123,38 @@ class FlowDayDatabase extends Dexie {
 export class Storage implements IStorageLayer {
   /** 数据库实例 */
   private db: FlowDayDatabase;
+  /** 是否已确保数据库可用 */
+  private dbReady: boolean = false;
   
   /**
    * 创建 Storage 实例
    */
   constructor() {
     this.db = new FlowDayDatabase();
+  }
+  
+  /**
+   * 确保数据库可用
+   * 如果 IndexedDB 版本冲突（旧版 PWA 可能升级了版本号），重建数据库
+   */
+  private async ensureDatabase(): Promise<void> {
+    if (this.dbReady) return;
+    
+    try {
+      // 尝试打开数据库
+      await this.db.open();
+      this.dbReady = true;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'VersionError') {
+        console.warn('[Storage] IndexedDB 版本冲突，重建数据库...');
+        await Dexie.delete('FlowDayDB');
+        this.db = new FlowDayDatabase();
+        await this.db.open();
+        this.dbReady = true;
+      } else {
+        throw error;
+      }
+    }
   }
   
   // ============================================================================
@@ -143,6 +169,7 @@ export class Storage implements IStorageLayer {
    * @param nodes - 节点数组
    */
   async saveNodes(nodes: ScheduleNode[]): Promise<void> {
+    await this.ensureDatabase();
     await this.db.transaction('rw', this.db.nodes, async () => {
       // 清空现有数据
       await this.db.nodes.clear();
@@ -163,6 +190,7 @@ export class Storage implements IStorageLayer {
    * @returns 节点数组
    */
   async loadNodes(): Promise<ScheduleNode[]> {
+    await this.ensureDatabase();
     const storedNodes = await this.db.nodes.toArray();
     
     return storedNodes.map(node => ({
@@ -212,6 +240,7 @@ export class Storage implements IStorageLayer {
    * @param tags - 标签数组
    */
   async saveTags(tags: Tag[]): Promise<void> {
+    await this.ensureDatabase();
     await this.db.transaction('rw', this.db.tags, async () => {
       await this.db.tags.clear();
       
@@ -226,6 +255,7 @@ export class Storage implements IStorageLayer {
    * @returns 标签数组
    */
   async loadTags(): Promise<Tag[]> {
+    await this.ensureDatabase();
     return this.db.tags.toArray();
   }
   
