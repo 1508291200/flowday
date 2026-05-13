@@ -103,8 +103,8 @@ export function SettingsView() {
   const isSyncing = status === 'syncing' || syncing;
   
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">设置</h1>
+    <div className="p-3 md:p-6 max-w-2xl mx-auto">
+      <h1 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">设置</h1>
       
       {/* WebDAV 云同步 */}
       <section className="mb-8">
@@ -193,7 +193,7 @@ export function SettingsView() {
           {isConfigured && (
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-medium text-gray-700 mb-3">同步操作</h3>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <Button 
                   onClick={handleUpload}
                   disabled={isSyncing}

@@ -15,7 +15,7 @@ export function Toolbar({ children, className }: ToolbarProps) {
     <div
       className={clsx(
         'h-10 bg-gray-50 border-b border-gray-200',
-        'flex items-center gap-2 px-3',
+        'flex items-center gap-2 px-2 md:px-3',
         className
       )}
     >

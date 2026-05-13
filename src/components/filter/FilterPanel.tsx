@@ -135,7 +135,7 @@ export function FilterPanel({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               重要度
             </label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap md:flex-nowrap">
               {[1, 2, 3, 4, 5].map(level => {
                 const inRange =
                   config.importanceRange &&
@@ -146,7 +146,7 @@ export function FilterPanel({
                     key={level}
                     onClick={() => handleImportanceChange(level as ImportanceLevel, !inRange)}
                     className={clsx(
-                      'w-8 h-8 rounded-full text-xs font-medium transition-colors',
+                      'w-9 h-9 md:w-8 md:h-8 rounded-full text-xs font-medium transition-colors',
                       inRange
                         ? 'text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -174,7 +174,7 @@ export function FilterPanel({
               <button
                 onClick={() => handleCompletedChange(undefined)}
                 className={clsx(
-                  'px-3 py-1 text-sm rounded-md transition-colors',
+                  'px-3 py-1.5 md:py-1 text-sm rounded-md transition-colors',
                   config.completed === undefined
                     ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -221,7 +221,7 @@ export function FilterPanel({
                       key={tag.id}
                       onClick={() => handleTagChange(tag.id, !selected)}
                       className={clsx(
-                        'px-2 py-1 text-xs rounded transition-colors',
+                        'px-2.5 md:px-2 py-1.5 md:py-1 text-xs rounded transition-colors',
                         selected
                           ? 'ring-2 ring-blue-400 ring-offset-1'
                           : 'opacity-60 hover:opacity-100'

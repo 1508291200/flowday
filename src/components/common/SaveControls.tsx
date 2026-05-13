@@ -86,11 +86,11 @@ export function SaveControls() {
   }, [importData]);
   
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 md:gap-2">
       {/* 保存状态 */}
       <div className="flex items-center gap-1">
         <SaveStatusIcon status={saveStatus} />
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-500 hidden md:inline">
           {saveStatus === 'saving' && '保存中'}
           {saveStatus === 'saved' && '已保存'}
           {saveStatus === 'error' && '错误'}
@@ -104,7 +104,23 @@ export function SaveControls() {
       
       {/* 按钮组 */}
       <div className="flex items-center gap-1">
-        {/* 手动保存 */}
+        {/* 手动保存 - 手机端只显示图标 */}
+        <button
+          onClick={handleSave}
+          disabled={saveStatus === 'saving'}
+          className={clsx(
+            'md:px-2 md:py-1 text-sm rounded',
+            'bg-gray-100 hover:bg-gray-200',
+            'transition-colors duration-150',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'p-1.5 md:hidden'
+          )}
+          title="手动保存"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+        </button>
         <button
           onClick={handleSave}
           disabled={saveStatus === 'saving'}
@@ -112,14 +128,15 @@ export function SaveControls() {
             'px-2 py-1 text-sm rounded',
             'bg-gray-100 hover:bg-gray-200',
             'transition-colors duration-150',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'hidden md:inline-flex'
           )}
           title="手动保存"
         >
           保存
         </button>
         
-        {/* 导出 */}
+        {/* 导出 - 手机端只显示图标 */}
         <div className="relative">
           <button
             onClick={() => setShowEncryptDialog(true)}
@@ -128,15 +145,32 @@ export function SaveControls() {
               'px-2 py-1 text-sm rounded',
               'bg-blue-50 text-blue-600 hover:bg-blue-100',
               'transition-colors duration-150',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              'hidden md:inline-flex'
             )}
             title="导出数据文件"
           >
             导出
           </button>
+          <button
+            onClick={() => setShowEncryptDialog(true)}
+            disabled={isExporting}
+            className={clsx(
+              'p-1.5 rounded',
+              'bg-blue-50 text-blue-600 hover:bg-blue-100',
+              'transition-colors duration-150',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              'md:hidden'
+            )}
+            title="导出数据文件"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
         </div>
         
-        {/* 导入 */}
+        {/* 导入 - 手机端只显示图标 */}
         <button
           onClick={handleImport}
           disabled={isImporting}
@@ -144,11 +178,28 @@ export function SaveControls() {
             'px-2 py-1 text-sm rounded',
             'bg-green-50 text-green-600 hover:bg-green-100',
             'transition-colors duration-150',
-            'disabled:opacity-50 disabled:cursor-not-allowed'
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'hidden md:inline-flex'
           )}
           title="导入数据文件"
         >
           导入
+        </button>
+        <button
+          onClick={handleImport}
+          disabled={isImporting}
+          className={clsx(
+            'p-1.5 rounded',
+            'bg-green-50 text-green-600 hover:bg-green-100',
+            'transition-colors duration-150',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'md:hidden'
+          )}
+          title="导入数据文件"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
         </button>
       </div>
       

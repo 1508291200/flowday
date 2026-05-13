@@ -147,7 +147,8 @@ export function ListItem({
         'hover:bg-gray-50 transition-colors duration-150 ease-out cursor-pointer',
         selected && 'bg-blue-50'
       )}
-      style={{ paddingLeft: `${depth * 24 + 8}px` }}
+      style={{ paddingLeft: `${depth * 16 + 8}px` }}
+      // 手机端缩进减少
       onClick={() => onSelect?.(node.id)}
       onDoubleClick={handleDoubleClick}
     >
@@ -238,7 +239,7 @@ export function ListItem({
 
       {/* 操作按钮 */}
       {!isRoot && (
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <IconButton
             size="sm"
             onClick={(e) => {

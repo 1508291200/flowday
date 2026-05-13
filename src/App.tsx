@@ -62,7 +62,7 @@ function App() {
         title="FlowDay"
         subtitle="智能日程管理"
         actions={
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 md:gap-4">
             <SaveControls />
             <ViewSwitcher
               currentView={currentView}
@@ -93,26 +93,27 @@ interface ViewSwitcherProps {
 }
 
 function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
-  const views: { key: ViewType; label: string }[] = [
-    { key: 'list', label: '列表' },
-    { key: 'mindmap', label: '思维导图' },
-    { key: 'filter', label: '筛选' },
+  const views: { key: ViewType; label: string; shortLabel: string }[] = [
+    { key: 'list', label: '列表', shortLabel: '列表' },
+    { key: 'mindmap', label: '思维导图', shortLabel: '导图' },
+    { key: 'filter', label: '筛选', shortLabel: '筛选' },
   ];
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center bg-gray-100 rounded-lg p-1">
-        {views.map(({ key, label }) => (
+      <div className="flex items-center bg-gray-100 rounded-lg p-0.5 md:p-1">
+        {views.map(({ key, label, shortLabel }) => (
           <button
             key={key}
             onClick={() => onViewChange(key)}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
+            className={`px-2 md:px-3 py-1 text-xs md:text-sm rounded-md transition-colors ${
               currentView === key
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            {label}
+            <span className="md:hidden">{shortLabel}</span>
+            <span className="hidden md:inline">{label}</span>
           </button>
         ))}
       </div>

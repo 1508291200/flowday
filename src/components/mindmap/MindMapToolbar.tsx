@@ -81,9 +81,14 @@ export function MindMapToolbar({
   canRedo = false,
 }: MindMapToolbarProps) {
   return (
-    <Toolbar>
+    <Toolbar className="overflow-x-auto">
       <ToolbarGroup>
-        <Button size="sm" icon={<AddIcon />} onClick={onAddRoot}>
+        {/* 手机端只显示图标 */}
+        <IconButton size="sm" title="添加日程" onClick={onAddRoot} className="md:hidden">
+          <AddIcon />
+        </IconButton>
+        {/* PC端显示文字+图标 */}
+        <Button size="sm" icon={<AddIcon />} onClick={onAddRoot} className="hidden md:inline-flex">
           添加日程
         </Button>
       </ToolbarGroup>
